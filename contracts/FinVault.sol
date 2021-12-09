@@ -73,6 +73,8 @@ contract FinVault {
     function supplyTokenToCompound(
         uint256 _amount
     ) public returns (uint) {
+
+        require(getUserBalance(msg.sender) >= _amount, "insufficient Balance");
         
         uint256 exchangeRateMantissa = cUsdc.exchangeRateCurrent();
         console.log("exhnagherateMantissa is %s", exchangeRateMantissa);
