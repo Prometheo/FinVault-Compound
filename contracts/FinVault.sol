@@ -55,6 +55,10 @@ contract FinVault {
 
     function getUserBalance(address user) public view returns (uint) {
         console.log(msg.sender);
+        /* user balance is returned in cUsdc, to convert to usdc, use the following math, to get how much usdc one cusdc is worth
+        mantissa = 18 + 6(usdc decimal) - 8(cUsdc decimal)
+        cusdcWorth = cusdc.exchangeRateCurrent() / 10**mantissa // this is the worth of one cUsdc in Usdc at that moment, changes with the exchange rate
+        */
         return userBalance[user];
     }
 
@@ -73,14 +77,12 @@ contract FinVault {
     function supplyTokenToCompound(
         uint256 _amount
     ) public returns (uint) {
-
-        require(getUserBalance(msg.sender) >= _amount, "insufficient Balance");
         
         uint256 exchangeRateMantissa = cUsdc.exchangeRateCurrent();
-        console.log("exhnagherateMantissa is %s", exchangeRateMantissa);
+        console.log("exhange rate current is %s", exchangeRateMantissa);
 
         uint256 supplyRateMantissa = cUsdc.supplyRatePerBlock();
-        console.log("exhnagherateMantissa is %s", supplyRateMantissa);
+        console.log("supply rate per block is %s", supplyRateMantissa);
         // Approve transfer on the ERC20 contract
         usdc.approve(CusdcAddress, _amount);
 
@@ -89,23 +91,17 @@ contract FinVault {
         return mintResult;
     }
 
+    function withdraw (uint256 amount) public {
+        require(getUserBalance(msg.sender) >= amount, "insufficient Balance");
+        require(redeemToken(amount), "withdrawal failed");
+    }
+
     function redeemToken(
-        uint256 amount,
-        bool redeemType
-    ) public returns (bool) {
-
-
-        uint256 redeemResult;
+        uint256 amount
+    ) internal returns (bool) {
         uint BalanceBefore = getVaultCusdcBalance();
         uint UsdcBalanceBefore = usdc.balanceOf(address(this));
-
-        if (redeemType == true) {
-            // Retrieve the asset based on a cUsdc amount
-            redeemResult = cUsdc.redeem(amount);
-        } else {
-            // Retrieve the asset based on an amount of the underlying asset i.e USDC
-            redeemResult = cUsdc.redeemUnderlying(amount);
-        }
+        uint256 redeemResult = cUsdc.redeem(amount);
         require(redeemResult == 0, "error withdrawing tokens");
 
         uint BalanceAfter = getVaultCusdcBalance();
