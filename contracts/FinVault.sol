@@ -95,6 +95,7 @@ contract FinVault {
 
         uint256 redeemResult;
         uint BalanceBefore = getVaultCusdcBalance();
+        uint UsdcBalanceBefore = usdc.balanceOf(address(this));
 
         if (redeemType == true) {
             // Retrieve the asset based on a cUsdc amount
@@ -106,8 +107,14 @@ contract FinVault {
         require(redeemResult == 0, "error withdrawing tokens");
 
         uint BalanceAfter = getVaultCusdcBalance();
+        uint UsdcBalanceAfter = usdc.balanceOf(address(this));
 
         userBalance[msg.sender] -= BalanceBefore - BalanceAfter;
+
+        uint userFund = UsdcBalanceAfter - UsdcBalanceBefore;
+
+        usdc.transfer(msg.sender, userFund);
+        
 
         return true;
     }
